@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+# SPDX-FileCopyrightText: 2020 the prplMesh contributors (see AUTHORS.md)
+# This code is subject to the terms of the BSD+Patent license.
+# See LICENSE file for more details.
+
+# POKY_BBLAYERS_CONF_VERSION is increased each time build/conf/bblayers.conf
+# changes incompatibly
+POKY_BBLAYERS_CONF_VERSION = "2"
+
+BBPATH = "${TOPDIR}"
+BBFILES ?= ""
+
+BBLAYERS ?= " \
+  ##OEROOT##/meta \
+  ##OEROOT##/meta-poky \
+  ##OEROOT##/meta-yocto-bsp \
+  ##OEROOT##/../meta-openembedded/meta-oe \
+  ##OEROOT##/../meta-openembedded/meta-python \
+  ##OEROOT##/../meta-openembedded/meta-networking \
+  ##OEROOT##/../meta-prplmesh \
+  "
