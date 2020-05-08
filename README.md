@@ -23,7 +23,12 @@ bitbake core-image-minimal
 ```
 runqemu tmp/deploy/images/qemux86-64 nographic
 ```
+* Login as "root" (no password)
 * Run prplmesh inside
 ```
-prplmesh_utils.sh -p -v -D eth0 -C eth0 start
+/opt/prplmesh/scripts/prplmesh_utils.sh -p -v -D eth0 -C eth0 start
+```
+* Check status
+```
+/opt/prplmesh/scripts/prplmesh_utils.sh status
 ```
