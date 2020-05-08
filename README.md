@@ -16,3 +16,14 @@ TEMPLATECONF=../meta-prplmesh/conf/poky source oe-init-build-env
 ```
 bitbake core-image-minimal
 ```
+
+## HOWTO run
+
+* Run QEMU
+```
+runqemu tmp/deploy/images/qemux86-64 nographic
+```
+* Run prplmesh inside
+```
+prplmesh_utils.sh -p -v -D eth0 -C eth0 start
+```

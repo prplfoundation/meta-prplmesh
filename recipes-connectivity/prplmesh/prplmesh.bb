@@ -18,35 +18,36 @@ INSANE_SKIP_${PN} = "useless-rpaths"
 BUILD_TYPE ?= "Release"
 TARGET_PLATFORM ?= "linux"
 BWL_TYPE ?= "DUMMY"
+INSTALL_PREFIX ?= "/opt/prplmesh"
 
 EXTRA_OECMAKE = "-DTARGET_PLATFORM=${TARGET_PLATFORM} \
                  -DBWL_TYPE=${BWL_TYPE} \
                  -DUSE_USER_TMP_PATH=0 \
+                 -DCMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \
                  -DPLATFORM_INCLUDE_DIR=${STAGING_INCDIR} \
                  -DPLATFORM_BUILD_DIR=${TMPDIR}/work/${MULTIMACH_TARGET_SYS} \
                  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
                  -DMSGLIB=None"
 
 do_install_append() {
-    install -d ${D}${sysconfdir}/prplmesh
-    install -m 0644 ${D}${datadir}/prplmesh*db* ${D}${sysconfdir}/prplmesh/
+    install -d ${D}${datadir}/cmake/Modules/
+    mv ${D}${INSTALL_PREFIX}/lib/cmake/* ${D}${datadir}/cmake/Modules/
+    rmdir ${D}${INSTALL_PREFIX}/lib/cmake
 
-    install -d ${D}/tmp/root
-    install -d ${D}/tmp/beerocks/logs
+    rm -rf ${D}${INSTALL_PREFIX}/host
 }
 
 FILES_${PN} += "\
-    ${bindir} \
-    ${libdir}/mapfcommon.so.* \
-    /usr/share \
-    /usr/scripts \
-    /usr/config \
-    /tmp \
+    ${INSTALL_PREFIX}/bin \
+    ${INSTALL_PREFIX}/lib/lib*.so.* \
+    ${INSTALL_PREFIX}/lib/mapfcommon.so.* \
+    ${INSTALL_PREFIX}/share \
+    ${INSTALL_PREFIX}/scripts \
+    ${INSTALL_PREFIX}/config \
 "
 
 FILES_${PN}-dev += "\
-    ${nonarch_libdir}/cmake \
-    ${includedir} \
-    ${libdir}/*.so \
-    /usr/host \
+    ${INSTALL_PREFIX}/include \
+    ${INSTALL_PREFIX}/lib/*.so \
+    ${datadir}/cmake/Modules \
 "
