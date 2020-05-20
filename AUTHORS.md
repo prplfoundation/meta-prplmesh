@@ -8,3 +8,4 @@ The prplMesh OpenEmbedded layer for integration in RDK-B is copyright 2020 its c
 This file lists all contributors.
 
 - Arnout Vandecappelle (Essensium/Mind)
+- Ivan Efimov (Inango Ltd.)
