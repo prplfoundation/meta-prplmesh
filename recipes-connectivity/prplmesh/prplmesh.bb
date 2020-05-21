@@ -10,17 +10,24 @@ OECMAKE_SOURCEPATH = "${S}/"
 
 SECTION = "net"
 LICENSE = "BSD-2-Clause-Patent.txt"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=7b45146d47e73bcbac1068e5cfc2a9fb"
-DEPENDS = "python-native python-pyyaml-native json-c openssl zeromq"
+# LIC_FILES_CHKSUM = "file://LICENSE;md5=7b45146d47e73bcbac1068e5cfc2a9fb"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=0518d409dae93098cca8dfa932f3ab1b"
+# DEPENDS = "python-native python-pyyaml-native json-c openssl nanomsg"
+# DEPENDS = "python-native python-pyyaml-native json-c openssl wpa-supplicant libnl"
+DEPENDS = "python-native python-pyyaml-native json-c openssl nng wpa-supplicant libnl"
 RDEPENDS_${PN} = "iproute2 busybox readline"
 SUMMARY = "prplMesh"
 
-SRCREV = "911392026280d9961823a9359e6cc4f08c9ee0a2"
-SRC_URI = "git://github.com/prplfoundation/prplMesh.git;protocol=http;branch=master"
+# SRCREV = "911392026280d9961823a9359e6cc4f08c9ee0a2"
+SRCREV = "d9eb170b69c1c225e40df5c191e8978568ec2e08"
+SRC_URI = "git://github.com/prplfoundation/prplMesh.git;protocol=http;branch=master \
+           file://001-add_find_nl_for_nl80211_bwl_type.patch"
 
 BUILD_TYPE ?= "Release"
 TARGET_PLATFORM ?= "linux"
-BWL_TYPE ?= "DUMMY"
+# BWL_TYPE ?= "DUMMY"
+# BWL_TYPE ?= "DWPAL"
+BWL_TYPE ?= "NL80211"
 INSTALL_PREFIX ?= "/opt/prplmesh"
 
 EXTRA_OECMAKE = "-DTARGET_PLATFORM=${TARGET_PLATFORM} \
@@ -28,7 +35,18 @@ EXTRA_OECMAKE = "-DTARGET_PLATFORM=${TARGET_PLATFORM} \
                  -DUSE_USER_TMP_PATH=0 \
                  -DCMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \
                  -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-                 -DMSGLIB=zmq"
+                 -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+                 -DCMAKE_INCLUDE_PATH=${STAGING_INCDIR} \
+                 -DCMAKE_LIBRARY_PATH=${STAGING_LIBDIR} \
+                 -DMSGLIB=nng"
+#                 -DMSGLIB=None"
+# CMake could not found CMake module for find nanomsg lib
+# So could not compile with it
+#                 -DMSGLIB=nng
+# Didn't help to force cmake find libnl header
+#                 -DCMAKE_CXX_FLAGS=-I${STAGING_INCDIR}
+# Not helped too
+#                 -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
 
 do_install_append() {
     install -d ${D}${datadir}/cmake/Modules/
