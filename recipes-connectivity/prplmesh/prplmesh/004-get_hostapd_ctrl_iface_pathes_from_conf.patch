@@ -1,0 +1,286 @@
+commit 4031b3c5012d0c49a0a30997081f9ee059c86a24
+Author: Ivan Efimov <i.efimov@inango-systems.com>
+Date:   Sat May 30 10:19:40 2020 +0500
+
+    nl80211: take hostapd ctl iface path from agent config file
+    
+    During porting prplMesh to RDKB on RPi it has been founded that
+    prplMesh assumptions for hostapd ctrl ifaces paths are not
+    valid for RPi.
+    
+    Instead of "/var/run/hostapd/<wlan-iface-name>" the paths are
+        /var/run/hostapd0/wlan0
+        /var/run/hostapd1/wlan1
+        /var/run/hostapd4/wlan2
+    
+    Add variables for hostapd and wpa supplicant ctrl ifaces for
+    each agent at beerocks_agent.conf:
+    
+        hostap_ctrl_iface
+        wpa_supplicant_ctrl_iface
+    
+    Default values were kept the same:
+    
+        [agent0]
+        ...
+        hostap_ctrl_iface=/var/run/hostapd/wlan0
+        wpa_supplicant_ctrl_iface=/var/run/wpa_supplicant/wlan0
+    
+        [agent1]
+        ...
+        hostap_ctrl_iface=/var/run/hostapd/wlan2
+        wpa_supplicant_ctrl_iface=/var/run/wpa_supplicant/wlan2
+    
+        [agent2]
+        ...
+        hostap_ctrl_iface=/var/run/hostapd/wlan4
+        wpa_supplicant_ctrl_iface=/var/run/wpa_supplicant/wlan4
+    
+    Signed-off-by: Ivan Efimov <i.efimov@inango-systems.com>
+
+diff --git a/AUTHORS.md b/AUTHORS.md
+index e99f9119..bf429267 100644
+--- a/AUTHORS.md
++++ b/AUTHORS.md
+@@ -19,6 +19,7 @@ This file lists all contributors.
+ - Frederik Van Bogaert
+ - Gal Wiener
+ - Intel Corporation
++- Ivan Efimov (Inango Systems Ltd.)
+ - Itay Elenzweig
+ - Juan Schroeder
+ - KC Chen
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 5c52c8f6..45fd59a5 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -119,6 +119,28 @@ set(BEEROCKS_LOG_FILES_AUTO_ROLL    "true")
+ set(BEEROCKS_LOG_STDOUT_ENABLED     "false")
+ set(BEEROCKS_LOG_SYSLOG_ENABLED     "false")
+ 
++# hostapd ctrl ifaces paths
++if(NOT DEFINED BEEROCKS_HOSTAP_WLAN1_CTRL_IFACE)
++    set(BEEROCKS_HOSTAP_WLAN1_CTRL_IFACE "/var/run/hostapd/${BEEROCKS_WLAN1_IFACE}")
++endif()
++if(NOT DEFINED BEEROCKS_HOSTAP_WLAN2_CTRL_IFACE)
++    set(BEEROCKS_HOSTAP_WLAN2_CTRL_IFACE "/var/run/hostapd/${BEEROCKS_WLAN2_IFACE}")
++endif()
++if(NOT DEFINED BEEROCKS_HOSTAP_WLAN3_CTRL_IFACE)
++    set(BEEROCKS_HOSTAP_WLAN3_CTRL_IFACE "/var/run/hostapd/${BEEROCKS_WLAN3_IFACE}")
++endif()
++
++# wpa supplicant ctrl ifaces paths
++if(NOT DEFINED BEEROCKS_WPA_SUPPLICANT_WLAN1_CTRL_IFACE)
++    set(BEEROCKS_WPA_SUPPLICANT_WLAN1_CTRL_IFACE "/var/run/wpa_supplicant/${BEEROCKS_WLAN1_IFACE}")
++endif()
++if(NOT DEFINED BEEROCKS_WPA_SUPPLICANT_WLAN2_CTRL_IFACE)
++    set(BEEROCKS_WPA_SUPPLICANT_WLAN2_CTRL_IFACE "/var/run/wpa_supplicant/${BEEROCKS_WLAN2_IFACE}")
++endif()
++if(NOT DEFINED BEEROCKS_WPA_SUPPLICANT_WLAN3_CTRL_IFACE)
++    set(BEEROCKS_WPA_SUPPLICANT_WLAN3_CTRL_IFACE "/var/run/wpa_supplicant/${BEEROCKS_WLAN3_IFACE}")
++endif()
++
+ # Platform specific flags
+ if (TARGET_PLATFORM STREQUAL "openwrt")
+     if (TARGET_PLATFORM_TYPE STREQUAL "ugw")
+diff --git a/agent/config/beerocks_agent.conf.in b/agent/config/beerocks_agent.conf.in
+index 0b6ddae9..c1f2a07e 100644
+--- a/agent/config/beerocks_agent.conf.in
++++ b/agent/config/beerocks_agent.conf.in
+@@ -28,18 +28,24 @@ radio_identifier=00:00:00:00:00:00
+ hostap_iface_type=WIFI_INTEL
+ hostap_ant_gain=0
+ enable_repeater_mode=@BEEROCKS_REPEATER_MODE@
++hostap_ctrl_iface=@BEEROCKS_HOSTAP_WLAN1_CTRL_IFACE@
++wpa_supplicant_ctrl_iface=@BEEROCKS_WPA_SUPPLICANT_WLAN1_CTRL_IFACE@
+ 
+ [agent1]
+ radio_identifier=00:00:00:00:00:02
+ hostap_iface_type=WIFI_INTEL
+ hostap_ant_gain=0
+ enable_repeater_mode=0
++hostap_ctrl_iface=@BEEROCKS_HOSTAP_WLAN2_CTRL_IFACE@
++wpa_supplicant_ctrl_iface=@BEEROCKS_WPA_SUPPLICANT_WLAN2_CTRL_IFACE@
+ 
+ [agent2]
+ radio_identifier=00:00:00:00:00:02
+ hostap_iface_type=WIFI_INTEL
+ hostap_ant_gain=0
+ enable_repeater_mode=0
++hostap_ctrl_iface=@BEEROCKS_HOSTAP_WLAN3_CTRL_IFACE@
++wpa_supplicant_ctrl_iface=@BEEROCKS_WPA_SUPPLICANT_WLAN3_CTRL_IFACE@
+ 
+ [log]
+ log_global_levels=error,info,warning,fatal,trace,debug
+diff --git a/agent/src/beerocks/slave/ap_manager_thread.cpp b/agent/src/beerocks/slave/ap_manager_thread.cpp
+index 4ac24d50..92ec656d 100644
+--- a/agent/src/beerocks/slave/ap_manager_thread.cpp
++++ b/agent/src/beerocks/slave/ap_manager_thread.cpp
+@@ -112,6 +112,7 @@ void ap_manager_thread::ap_manager_config(ap_manager_conf_t &conf)
+ 
+     bwl::hal_conf_t hal_conf;
+     hal_conf.ap_acs_enabled = acs_enabled;
++    hal_conf.wpa_ctrl_path = conf.wpa_ctrl_path;
+ 
+     // Create a new AP HAL instance
+     ap_wlan_hal = bwl::ap_wlan_hal_create(
+diff --git a/agent/src/beerocks/slave/ap_manager_thread.h b/agent/src/beerocks/slave/ap_manager_thread.h
+index 966f5833..684d7d4f 100644
+--- a/agent/src/beerocks/slave/ap_manager_thread.h
++++ b/agent/src/beerocks/slave/ap_manager_thread.h
+@@ -30,6 +30,7 @@ public:
+         beerocks::eIfaceType hostap_iface_type;
+         int channel;
+         bool iface_filter_low;
++        std::string wpa_ctrl_path;
+     };
+ 
+     void ap_manager_config(ap_manager_conf_t &conf);
+diff --git a/agent/src/beerocks/slave/beerocks_slave_main.cpp b/agent/src/beerocks/slave/beerocks_slave_main.cpp
+index d0b552e8..8dac5242 100644
+--- a/agent/src/beerocks/slave/beerocks_slave_main.cpp
++++ b/agent/src/beerocks/slave/beerocks_slave_main.cpp
+@@ -168,6 +168,9 @@ static void fill_son_slave_config(const beerocks::config_file::sConfigSlave &bee
+         beerocks::string_utils::stoi(beerocks_slave_conf.sta_iface_filter_low[slave_num]);
+     son_slave_conf.backhaul_wireless_iface_type = son_slave_conf.hostap_iface_type;
+ 
++    son_slave_conf.hostap_ctrl_iface = beerocks_slave_conf.hostap_ctrl_iface[slave_num];
++    son_slave_conf.wpa_supplicant_ctrl_iface = beerocks_slave_conf.wpa_supplicant_ctrl_iface[slave_num];
++
+     // disable stopping on failure initially. Later on, it will be read from BPL as part of
+     // cACTION_PLATFORM_SON_SLAVE_REGISTER_RESPONSE
+     son_slave_conf.stop_on_failure_attempts = 0;
+@@ -559,7 +562,7 @@ int main(int argc, char *argv[])
+         std::string base_name = std::string(BEEROCKS_AGENT) + "_" + hostap_iface;
+         beerocks::os_utils::kill_pid(beerocks_slave_conf.temp_path, base_name);
+ 
+-        //start new slave process
++        // start new slave process
+         LOG(INFO) << "Starting slave for iface '" << hostap_iface << "'";
+ 
+         std::string file_name = "./" + std::string(BEEROCKS_AGENT);
+diff --git a/agent/src/beerocks/slave/son_slave_thread.cpp b/agent/src/beerocks/slave/son_slave_thread.cpp
+index fd26af78..943a986b 100644
+--- a/agent/src/beerocks/slave/son_slave_thread.cpp
++++ b/agent/src/beerocks/slave/son_slave_thread.cpp
+@@ -3692,6 +3692,7 @@ bool slave_thread::ap_manager_start()
+     ap_manager_conf.hostap_iface_type = config.hostap_iface_type;
+     ap_manager_conf.channel           = wlan_settings.channel;
+     ap_manager_conf.iface_filter_low  = config.backhaul_wireless_iface_filter_low;
++    ap_manager_conf.wpa_ctrl_path     = config.hostap_ctrl_iface;
+ 
+     ap_manager->ap_manager_config(ap_manager_conf);
+ 
+diff --git a/agent/src/beerocks/slave/son_slave_thread.h b/agent/src/beerocks/slave/son_slave_thread.h
+index 41f1e133..80313d35 100644
+--- a/agent/src/beerocks/slave/son_slave_thread.h
++++ b/agent/src/beerocks/slave/son_slave_thread.h
+@@ -53,6 +53,8 @@ public:
+         beerocks::eIfaceType hostap_iface_type;
+         int hostap_ant_gain;
+         std::string radio_identifier; //mAP RUID
++        std::string hostap_ctrl_iface;
++        std::string wpa_supplicant_ctrl_iface;
+     } sSlaveConfig;
+ 
+     typedef struct {
+diff --git a/common/beerocks/bcl/include/bcl/beerocks_config_file.h b/common/beerocks/bcl/include/bcl/beerocks_config_file.h
+index a5920029..3971558e 100644
+--- a/common/beerocks/bcl/include/bcl/beerocks_config_file.h
++++ b/common/beerocks/bcl/include/bcl/beerocks_config_file.h
+@@ -102,13 +102,15 @@ public:
+         std::string enable_system_hang_test;
+         std::string enable_son_slaves_watchdog;
+         std::string const_backhaul_slave;
+-        //[slaveX]
++        //[agentX]
+         std::string radio_identifier[IRE_MAX_SLAVES]; // mAP RUID
+         std::string enable_repeater_mode[IRE_MAX_SLAVES];
+         std::string hostap_iface_type[IRE_MAX_SLAVES];
+         std::string sta_iface[IRE_MAX_SLAVES];
+         std::string sta_iface_filter_low[IRE_MAX_SLAVES];
+         std::string hostap_ant_gain[IRE_MAX_SLAVES];
++        std::string hostap_ctrl_iface[IRE_MAX_SLAVES];
++        std::string wpa_supplicant_ctrl_iface[IRE_MAX_SLAVES];
+         //[log]
+         SConfigLog sLog;
+     } sConfigSlave;
+diff --git a/common/beerocks/bcl/source/beerocks_config_file.cpp b/common/beerocks/bcl/source/beerocks_config_file.cpp
+index 4c82b4ca..d1801c10 100644
+--- a/common/beerocks/bcl/source/beerocks_config_file.cpp
++++ b/common/beerocks/bcl/source/beerocks_config_file.cpp
+@@ -193,6 +193,8 @@ bool config_file::read_slave_config_file(const std::string &config_file_path, sC
+                             mandatory_slave),
+             std::make_tuple("hostap_ant_gain=", &conf.hostap_ant_gain[slave_num], mandatory_slave),
+             std::make_tuple("sta_iface_filter_low=", &conf.sta_iface_filter_low[slave_num], 0),
++            std::make_tuple("hostap_ctrl_iface=", &conf.hostap_ctrl_iface[slave_num], 0),
++            std::make_tuple("wpa_supplicant_ctrl_iface=", &conf.wpa_supplicant_ctrl_iface[slave_num], 0),
+         };
+         std::string config_type = "agent" + std::to_string(slave_num);
+         if (!read_config_file(config_file_path, slave_conf_args, config_type)) {
+diff --git a/common/beerocks/bwl/include/bwl/base_wlan_hal_types.h b/common/beerocks/bwl/include/bwl/base_wlan_hal_types.h
+index bcd51d06..9b0d45d9 100644
+--- a/common/beerocks/bwl/include/bwl/base_wlan_hal_types.h
++++ b/common/beerocks/bwl/include/bwl/base_wlan_hal_types.h
+@@ -100,6 +100,7 @@ struct RadioInfo {
+ 
+ struct hal_conf_t {
+     bool ap_acs_enabled = false;
++    std::string wpa_ctrl_path;
+ };
+ 
+ //sta_wlan_hal
+diff --git a/common/beerocks/bwl/nl80211/ap_wlan_hal_nl80211.cpp b/common/beerocks/bwl/nl80211/ap_wlan_hal_nl80211.cpp
+index 5e54c62d..58466765 100644
+--- a/common/beerocks/bwl/nl80211/ap_wlan_hal_nl80211.cpp
++++ b/common/beerocks/bwl/nl80211/ap_wlan_hal_nl80211.cpp
+@@ -115,7 +115,7 @@ static uint8_t wpa_bw_to_beerocks_bw(const std::string &chan_width)
+ ap_wlan_hal_nl80211::ap_wlan_hal_nl80211(const std::string &iface_name, hal_event_cb_t callback,
+                                          hal_conf_t hal_conf)
+     : base_wlan_hal(bwl::HALType::AccessPoint, iface_name, IfaceType::Intel, callback, hal_conf),
+-      base_wlan_hal_nl80211(bwl::HALType::AccessPoint, iface_name, callback, BUFFER_SIZE)
++      base_wlan_hal_nl80211(bwl::HALType::AccessPoint, iface_name, callback, BUFFER_SIZE, hal_conf)
+ {
+ }
+ 
+diff --git a/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp b/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp
+index 8a50ccd7..25fb4195 100644
+--- a/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp
++++ b/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp
+@@ -35,7 +35,6 @@ namespace nl80211 {
+ ///////////////////////// Local Module Definitions ///////////////////////////
+ //////////////////////////////////////////////////////////////////////////////
+ 
+-#define BASE_CTRL_PATH "/var/run/"
+ #define AP_ENABELED_TIMEOUT_SEC 15
+ #define AP_ENABELED_FIXED_DFS_TIMEOUT_SEC 660
+ 
+@@ -206,7 +205,8 @@ base_wlan_hal_nl80211::base_wlan_hal_nl80211(HALType type, const std::string &if
+     : base_wlan_hal(type, iface_name, IfaceType::Intel, callback, hal_conf),
+       beerocks::beerocks_fsm<nl80211_fsm_state, nl80211_fsm_event>(nl80211_fsm_state::Delay),
+       m_nl80211_client(nl80211_client_factory::create_instance()),
+-      m_wpa_ctrl_buffer_size(wpa_ctrl_buffer_size)
++      m_wpa_ctrl_buffer_size(wpa_ctrl_buffer_size),
++      m_wpa_ctrl_path(hal_conf.wpa_ctrl_path)
+ {
+     LOG_IF(!m_nl80211_client, FATAL) << "Failed to create nl80211_client instance";
+     // Allocate wpa_ctrl buffer
+@@ -218,18 +218,6 @@ base_wlan_hal_nl80211::base_wlan_hal_nl80211(HALType type, const std::string &if
+         });
+     }
+ 
+-    m_wpa_ctrl_path = BASE_CTRL_PATH;
+-    if (get_type() == HALType::AccessPoint || get_type() == HALType::Monitor) {
+-        m_wpa_ctrl_path += "hostapd/";
+-    } else if (get_type() == HALType::Station) {
+-        m_wpa_ctrl_path += "wpa_supplicant/";
+-    } else {
+-        LOG(ERROR) << "Unsupported HAL Type: " << int(get_type());
+-        return; // HACK TODO what should we do in that case?
+-    }
+-
+-    m_wpa_ctrl_path += m_radio_info.iface_name;
+-
+     // Initialize the FSM
+     fsm_setup();
+ }

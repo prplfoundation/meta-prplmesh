@@ -1,24 +1,151 @@
+commit 5c97a1ecfc654d9243b4b1c5cde295ea56e4bd80
+Author: Ivan Efimov <i.efimov@inango-systems.com>
+Date:   Thu May 28 22:44:55 2020 +0500
+
+    bwl: fix build bwl "NL80211" for platform "linux"
+    
+    If run build with options: -DBWL_TYPE=NL80211 -DTARGET_PLATFORM=linux
+    then next compilation errors happen:
+    
+        /home/mutespirit/inango/prplmesh/prplmesh_root/prplMesh/common/beerocks/bwl/shared/netlink_socket.cpp:11:10: fatal error: netlink/msg.h: No such file or directory
+         #include <netlink/msg.h>
+                   ^~~~~~~~~~~~~~~
+                   compilation terminated.
+    
+        /home/mutespirit/inango/prplmesh/prplmesh_root/prplMesh/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp:20:10: fatal error: wpa_ctrl.h: No such file or directory
+         #include <wpa_ctrl.h>
+                  ^~~~~~~~~~~~
+    
+    Fix bwl CMake file:
+    * add search hostapd include folders for "linux" target platforms too
+    * add "nl-3" library search for "NL80211" bwl
+    * keep requirements for "nl-tiny" for OpenWrt which does not support
+      full libnl
+    
+    Change include <wpa_client.h> to "wpa_client.h" to allow compiler find
+    it in hostapd directory
+    
+    Signed-off-by: Ivan Efimov <i.efimov@inango-systems.com>
+
 diff --git a/common/beerocks/bwl/CMakeLists.txt b/common/beerocks/bwl/CMakeLists.txt
-index a59682e7..647249bc 100644
+index 650283a4..d23cf23d 100644
 --- a/common/beerocks/bwl/CMakeLists.txt
 +++ b/common/beerocks/bwl/CMakeLists.txt
-@@ -19,7 +19,7 @@ if (TARGET_PLATFORM STREQUAL "rdkb")
+@@ -9,7 +9,7 @@ file(GLOB_RECURSE bwl_common_sources ${MODULE_PATH}/common/*.c*)
+ # Support more permissive c++ language
+ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
+ 
+-# Default defaults
++# Defaults
+ set(BWL_TYPE "DUMMY")
+ add_definitions(-DBEEROCKS_TMP_PATH="${TMP_PATH}")
+ 
+@@ -19,21 +19,23 @@ if (TARGET_PLATFORM STREQUAL "rdkb")
      # Extra libraries
      list(APPEND BWL_LIBS rt dl)
  
 -elseif(TARGET_PLATFORM STREQUAL "openwrt")
-+else()
++elseif (TARGET_PLATFORM_TYPE STREQUAL "ugw")
  
-     if (TARGET_PLATFORM_TYPE STREQUAL "ugw")
-         set(BWL_TYPE "DWPAL")
-@@ -103,7 +103,9 @@ elseif(BWL_TYPE STREQUAL "NL80211")
+-    if (TARGET_PLATFORM_TYPE STREQUAL "ugw")
+-        set(BWL_TYPE "DWPAL")
+-    else()
+-        set(BWL_TYPE "NL80211")
+-    endif()
++    set(BWL_TYPE "DWPAL")
++
++endif()
++
++if (NOT BWL_TYPE STREQUAL "DUMMY")
+ 
+-    # hostapd directory
+     file(GLOB HOSTAPD_SEARCH_PATHS "${PLATFORM_BUILD_DIR}/hostapd*/hostapd-*")
+     find_path(HOSTAPD_INCLUDE_DIR NAMES "src/common/wpa_ctrl.h" PATHS ${HOSTAPD_SEARCH_PATHS} NO_CMAKE_FIND_ROOT_PATH)
+     set(HOSTAPD_DIR "${HOSTAPD_INCLUDE_DIR}")
+ 
+ endif()
+ 
++# If it's needed to build prplMesh with BWL_TYPE=NL80211
++# you should pass this variable via cmake cmdline options
++
+ set(BWL_TYPE ${BWL_TYPE} CACHE STRING "Which BWL backend to use")
+ 
+ ##########################################################################
+@@ -41,7 +43,7 @@ set(BWL_TYPE ${BWL_TYPE} CACHE STRING "Which BWL backend to use")
+ ##########################################################################
+ 
+ if(BWL_TYPE STREQUAL "DWPAL")
+-    
++
+     include_directories(
+         ${HOSTAPD_DIR}/src/drivers
+         ${PLATFORM_BUILD_DIR}/iwlwav-iw-4.14
+@@ -91,19 +93,30 @@ elseif(BWL_TYPE STREQUAL "NL80211")
+     )
+ 
+     # Hostapd/NL80211 include directories
+-    include_directories(
++    list(APPEND BWL_INC_DIRS
+         ${HOSTAPD_DIR}/src/utils
+         ${HOSTAPD_DIR}/src/common
+         ${HOSTAPD_DIR}/src/drivers
+-        ${PLATFORM_INCLUDE_DIR}/libnl-tiny
+     )
++    # OpenWrt support only libnl-tiny
++    if (TARGET_PLATFORM_TYPE STREQUAL "openwrt")
++        list(APPEND BWL_INC_DIRS ${PLATFORM_INCLUDE_DIR}/libnl-tiny)
++    endif()
++    include_directories(${BWL_INC_DIRS})
+ 
+     # Platform libraries
+     link_directories(
          ${PLATFORM_STAGING_DIR}/usr/lib
      )
  
 -    list(APPEND BWL_LIBS nl-tiny)
-+    find_package(nl-3 REQUIRED)
-+    find_package(nl-genl-3 REQUIRED)
-+    list(APPEND BWL_LIBS nl-3 nl-genl-3 wpa_client)
++    if (TARGET_PLATFORM_TYPE STREQUAL "openwrt")
++        find_package(nl-tiny REQUIRED)
++        list(APPEND BWL_LIBS nl-tiny)
++    else()
++        find_package(nl-3 REQUIRED)
++        find_package(nl-genl-3 REQUIRED)
++        list(APPEND BWL_LIBS nl-3 nl-genl-3 wpa_client)
++    endif()
  
  elseif(BWL_TYPE STREQUAL "DUMMY")
  
+@@ -116,7 +129,7 @@ elseif(BWL_TYPE STREQUAL "DUMMY")
+         ${MODULE_PATH}/dummy/base_wlan_hal_dummy.cpp
+         ${MODULE_PATH}/dummy/sta_wlan_hal_dummy.cpp
+     )
+-    
++
+ else()
+ 
+     string(TOLOWER ${BWL_TYPE} BWL_PATH)
+diff --git a/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp b/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp
+index 8a50ccd7..7c4edccd 100644
+--- a/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp
++++ b/common/beerocks/bwl/nl80211/base_wlan_hal_nl80211.cpp
+@@ -17,7 +17,7 @@
+ #include <easylogging++.h>
+ 
+ extern "C" {
+-#include <wpa_ctrl.h>
++#include "wpa_ctrl.h"
+ }
+ 
+ #include <linux/nl80211.h>
+diff --git a/common/beerocks/bwl/nl80211/mon_wlan_hal_nl80211.cpp b/common/beerocks/bwl/nl80211/mon_wlan_hal_nl80211.cpp
+index 70d4571f..9543c9ff 100644
+--- a/common/beerocks/bwl/nl80211/mon_wlan_hal_nl80211.cpp
++++ b/common/beerocks/bwl/nl80211/mon_wlan_hal_nl80211.cpp
+@@ -16,7 +16,7 @@
+ #include <cmath>
+ 
+ extern "C" {
+-#include <wpa_ctrl.h>
++#include "wpa_ctrl.h"
+ }
+ 
+ #include <linux/nl80211.h>
