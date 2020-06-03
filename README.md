@@ -5,7 +5,41 @@ This code is subject to the terms of the BSD+Patent license.
 See LICENSE file for more details.
 -->
 
-## HOWTO build
+## RDKB (OE 2.2)
+
+## HOWTO build image for Raspberry Pi 3 B+
+
+> Based on [official RDK build manual](https://wiki.rdkcentral.com/pages/viewpage.action?pageId=71011616#RDK-B(RaspberryPi3B+)BuildandSetupManual-RouterProfile-BuildInstructions)
+
+* Fetch sources
+```
+repo init -u https://code.rdkcentral.com/r/manifests -b rdk-next -m rdkb-extsrc.xml
+repo sync -j4 --no-clone-bundle
+```
+
+* Fetch meta-prplmesh
+```
+git clone -b rdkb-next https://github.com/prplfoundation/meta-prplmesh
+```
+
+* Source build env
+```
+MACHINE=raspberrypi-rdk-broadband source meta-cmf-raspberrypi/setup-environment 
+```
+
+* Append to file `conf/bblayers.conf`
+```
+BBLAYERS =+ "${RDKROOT}/meta-prplmesh"
+```
+
+* Run image build
+```
+bitbake rdk-generic-broadband-image
+```
+
+## Yocto Poky 2.2 Morty
+
+### HOWTO build
 
 * fetch sources
 ```
@@ -24,7 +58,7 @@ TEMPLATECONF=../meta-prplmesh/conf/poky source oe-init-build-env
 bitbake core-image-minimal
 ```
 
-## HOWTO run
+### HOWTO run QEMU
 
 * Run QEMU
 ```
