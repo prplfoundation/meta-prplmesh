@@ -1,0 +1,13 @@
+diff --git a/recipes/opensync/opensync_1.4.0.bb b/recipes/opensync/opensync_1.4.0.bb
+index 5f6643b..c22ee22 100644
+--- a/recipes/opensync/opensync_1.4.0.bb
++++ b/recipes/opensync/opensync_1.4.0.bb
+@@ -8,7 +8,7 @@ inherit python3native
+ 
+ FILESEXTRAPATHS_prepend := "${THISDIR}/files:"
+ 
+-DEPENDS = "libev libgpg-error wireless-tools openssl jansson libtool mosquitto openvswitch protobuf-c dbus libpcap openvswitch-native hal-wifi halinterface mesh-agent python3-kconfiglib-native"
++DEPENDS = "libev libgpg-error openssl jansson libtool mosquitto openvswitch protobuf-c dbus libpcap openvswitch-native hal-wifi halinterface mesh-agent python3-kconfiglib-native"
+ RDEPENDS_${PN} += "openvswitch"
+ 
+ SRCREV_core ?= "${AUTOREV}"

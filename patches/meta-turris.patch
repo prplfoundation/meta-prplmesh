@@ -1,0 +1,22 @@
+diff --git a/recipes-core/packagegroups/packagegroup-turris-core.bb b/recipes-core/packagegroups/packagegroup-turris-core.bb
+index 6fc5f16..77ce845 100644
+--- a/recipes-core/packagegroups/packagegroup-turris-core.bb
++++ b/recipes-core/packagegroups/packagegroup-turris-core.bb
+@@ -19,8 +19,6 @@ RDEPENDS_packagegroup-turris-core = " \
+    iputils \
+    btrfs-tools \
+    util-linux-readprofile \
+-   wireless-tools \
+-   trace-cmd \
+    cryptsetup \
+    coreutils \
+    dosfstools \
+@@ -39,7 +37,7 @@ RDEPENDS_packagegroup-turris-core = " \
+    squashfs-tools \
+    valgrind \
+    testfloat \
+-   iperf \
++   iperf3 \
+    dhcp-server \
+    iptables \
+    dnsmasq \

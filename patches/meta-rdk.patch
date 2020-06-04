@@ -1,0 +1,12 @@
+diff --git a/recipes-core/packagegroups/packagegroup-rdk-oss-broadband.bb b/recipes-core/packagegroups/packagegroup-rdk-oss-broadband.bb
+index a0bfdcaa..106f5917 100644
+--- a/recipes-core/packagegroups/packagegroup-rdk-oss-broadband.bb
++++ b/recipes-core/packagegroups/packagegroup-rdk-oss-broadband.bb
+@@ -68,7 +68,6 @@ RDEPENDS_packagegroup-rdk-oss-broadband = "\
+     smartmontools \
+     spawn-fcgi \
+     ssmtp \
+-    wireless-tools \
+     yajl \
+     zlib \
+     net-snmp-client \

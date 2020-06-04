@@ -1,0 +1,17 @@
+diff --git a/recipes-core/glib-2.0/files/log_conntion_failures.patch b/recipes-core/glib-2.0/files/log_conntion_failures.patch
+index abbf61d3..1949ee50 100644
+--- a/recipes-core/glib-2.0/files/log_conntion_failures.patch
++++ b/recipes-core/glib-2.0/files/log_conntion_failures.patch
+@@ -50,12 +50,3 @@ Index: glib-2.48.1/gio/gsocketclient.c
+  
+        if (name)
+  	g_prefix_error (&error, _("Could not connect to %s: "), name);
+-@@ -1503,6 +1503,8 @@ g_socket_client_connected_callback (GObj
+- 			     data->current_addr);
+-       set_last_error (data, error);
+- 
+-+      g_warning("%s. Trying next ip.",error->message);
+-+
+-       /* try next one */
+-       enumerator_next_async (data);
+-       return;
