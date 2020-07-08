@@ -1,0 +1,9 @@
+[Unit]
+Description=Prpl startup
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /bin/prplmesh_startup.sh
+
+[Install]
+WantedBy=multi-user.target
