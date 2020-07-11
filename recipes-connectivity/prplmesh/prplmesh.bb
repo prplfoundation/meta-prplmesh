@@ -13,7 +13,7 @@ SECTION = "net"
 LICENSE = "BSD-2-Clause-Patent.txt"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=0518d409dae93098cca8dfa932f3ab1b"
 
-DEPENDS = "python-native python-pyyaml-native json-c openssl"
+DEPENDS = "python-native python-pyyaml-native json-c openssl readline"
 RDEPENDS_${PN} = "iproute2 busybox"
 
 SRCREV = "d55b727b52158d46b3a0263734445ac29116220f"
