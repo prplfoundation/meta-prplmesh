@@ -14,7 +14,7 @@ LICENSE = "BSD-2-Clause-Patent.txt"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=0518d409dae93098cca8dfa932f3ab1b"
 
 DEPENDS = "python-native python-pyyaml-native json-c openssl"
-RDEPENDS_${PN} = "iproute2 busybox readline"
+RDEPENDS_${PN} = "iproute2 busybox"
 
 SRCREV = "8a331d9fa1631782cf06603ee612ce6133ee0c1a"
 SRC_URI = "git://github.com/prplfoundation/prplMesh.git;protocol=http;branch=master \
