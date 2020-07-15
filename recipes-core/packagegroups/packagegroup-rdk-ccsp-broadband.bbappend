@@ -3,4 +3,4 @@
 # This code is subject to the terms of the BSD+Patent license.
 # See LICENSE file for more details.
 
-IMAGE_INSTALL_append = " packagegroup-prplmesh"
+WIFI_AGENT = "packagegroup-prplmesh"
