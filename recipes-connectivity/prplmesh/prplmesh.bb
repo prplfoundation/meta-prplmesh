@@ -16,13 +16,9 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=0518d409dae93098cca8dfa932f3ab1b"
 DEPENDS = "python-native python-pyyaml-native json-c openssl"
 RDEPENDS_${PN} = "iproute2 busybox"
 
-SRCREV = "8a331d9fa1631782cf06603ee612ce6133ee0c1a"
+SRCREV = "d55b727b52158d46b3a0263734445ac29116220f"
 SRC_URI = "git://github.com/prplfoundation/prplMesh.git;protocol=http;branch=master \
-           file://001-add_find_nl_for_nl80211_bwl_type.patch \
-           file://002-allow_redefine_beerocks_vars_from_cmdline.patch \
-           file://003_prplmesh_util_stop_use_hard_coded_wlan_iface_names.patch \
-           file://004-get_hostapd_ctrl_iface_pathes_from_conf.patch"
-
+	  "
 
 PACKAGECONFIG ??= "${BWL_TYPE} ${MSGLIB}"
 
@@ -73,7 +69,12 @@ PACKAGECONFIG[mq-zmq] = "-DMSGLIB=zmq,,zeromq,"
 PACKAGECONFIG[mq-nng] = "-DMSGLIB=nng,,nng,"
 PACKAGECONFIG[mq-none] = "-DMSGLIB=None,,nng,"
 
-PACKAGECONFIG[bwl-nl80211] = "-DBWL_TYPE=NL80211,,wpa-supplicant libnl,wpa-supplicant"
+# Add explicit linking beerocks bwl lib with wpa_client lib
+# When OpenWrt toolchain build prplMesh the linker use object file
+# "wpa_ctrl.c.o" directly from hostapd internal build folder
+# But it's not possible in Yocto environment so add dependency on
+# "wpa-supplicant" recipe to use "wpa_client" library which it builds
+PACKAGECONFIG[bwl-nl80211] = "-DBWL_TYPE=NL80211 -DBWL_LIBS=wpa_client,,wpa-supplicant libnl,wpa-supplicant"
 PACKAGECONFIG[bwl-dummy] = "-DBWL_TYPE=DUMMY,,wpa-supplicant libnl,wpa-supplicant"
 PACKAGECONFIG[bwl-dwpal] = "-DBWL_TYPE=DWPAL,,libnl ubus uci wav-dpal,"
 
