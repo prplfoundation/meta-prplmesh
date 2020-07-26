@@ -45,12 +45,22 @@ BEEROCKS_WLAN1_IFACE_raspberrypi-rdk-broadband = "wlan0"
 BEEROCKS_WLAN2_IFACE_raspberrypi-rdk-broadband = "wlan1"
 BEEROCKS_HOSTAP_WLAN1_CTRL_IFACE_raspberrypi-rdk-broadband="/var/run/hostapd0/wlan0"
 BEEROCKS_HOSTAP_WLAN2_CTRL_IFACE_raspberrypi-rdk-broadband="/var/run/hostapd4/wlan1"
-BEEROCKS_BH_WIRE_IFACE_raspberrypi-rdk-broadband = "erouter0"
+#
+# Turris Omnia machine specific
+#
+BEEROCKS_WLAN1_IFACE_turris = "wifi0"
+BEEROCKS_WLAN2_IFACE_turris = "wifi1"
+BEEROCKS_WLAN3_IFACE_turris = "wifi2"
+
+BEEROCKS_HOSTAP_WLAN1_CTRL_IFACE="/var/run/hostapd/wifi0"
+BEEROCKS_HOSTAP_WLAN2_CTRL_IFACE="/var/run/hostapd/wifi1"
+BEEROCKS_HOSTAP_WLAN3_CTRL_IFACE="/var/run/hostapd/wifi2"
 #
 # RDKB specific
 # "ZeroMG" has incompatible license for RDKB so use NNG
 MSGLIB_rdk ?= "mq-nng"
 
+BEEROCKS_BH_WIRE_IFACE_rdk = "erouter0"
 BEEROCKS_BRIDGE_IFACE_rdk ?= "brlan0"
 #
 # FIXME: There is a bug in script printing status
