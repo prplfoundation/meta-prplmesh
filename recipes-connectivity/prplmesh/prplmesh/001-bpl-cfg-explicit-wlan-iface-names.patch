@@ -1,0 +1,45 @@
+diff --git a/framework/platform/bpl/CMakeLists.txt b/framework/platform/bpl/CMakeLists.txt
+index 3fe9d810..9b34a584 100644
+--- a/framework/platform/bpl/CMakeLists.txt
++++ b/framework/platform/bpl/CMakeLists.txt
+@@ -25,6 +25,12 @@ set(BEEROCKS_WPA_SUPPLICANT_WLAN3_CTRL_IFACE "/var/run/wpa_supplicant/${BEEROCKS
+ # Add prplmesh_platform_db config generation
+ add_subdirectory(platform_db)
+ 
++configure_file(
++	"${CMAKE_CURRENT_SOURCE_DIR}/linux/bpl_cfg.cpp.in"
++	"${CMAKE_CURRENT_SOURCE_DIR}/linux/bpl_cfg.cpp"
++	)
++
++
+ # OpenWRT
+ if (TARGET_PLATFORM STREQUAL "openwrt")
+ 
+diff --git a/framework/platform/bpl/linux/bpl_cfg.cpp b/framework/platform/bpl/linux/bpl_cfg.cpp.in
+similarity index 97%
+rename from framework/platform/bpl/linux/bpl_cfg.cpp
+rename to framework/platform/bpl/linux/bpl_cfg.cpp.in
+index 93975c38..9d4711d4 100644
+--- a/framework/platform/bpl/linux/bpl_cfg.cpp
++++ b/framework/platform/bpl/linux/bpl_cfg.cpp.in
+@@ -296,11 +296,15 @@ int cfg_get_hostap_iface(int32_t radio_num, char hostap_iface[BPL_IFNAME_LEN])
+         return RETURN_ERR;
+     }
+ 
+-    // the linux implementation expects to receive "wlanX" for interface names where the X is:
+-    // 0,2 for Linux-PC
+-    // 0,1 for Turris-Omnia and GLInet
+-    // we return 0,1,2 and the upper layer filters the non-supported interface
+-    std::string iface_str("wlan" + std::to_string(radio_num));
++    std::string iface_str;
++    switch (radio_num) {
++	case 0: iface_str = "@BEEROCKS_WLAN1_IFACE@"; break;
++	case 1: iface_str = "@BEEROCKS_WLAN2_IFACE@"; break;
++	case 2: iface_str = "@BEEROCKS_WLAN3_IFACE@"; break;
++        default:
++            MAPF_ERR("cfg_get_hostap_iface: unknown iface index: " + std::to_string(radio_num));
++            return RETURN_ERR;
++    }
+     mapf::utils::copy_string(hostap_iface, iface_str.c_str(), BPL_IFNAME_LEN);
+     return RETURN_OK;
+ }
