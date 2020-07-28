@@ -18,6 +18,7 @@ RDEPENDS_${PN} = "iproute2 busybox"
 
 SRCREV = "d55b727b52158d46b3a0263734445ac29116220f"
 SRC_URI = "git://github.com/prplfoundation/prplMesh.git;protocol=http;branch=master \
+           file://001-bpl-cfg-explicit-wlan-iface-names.patch \
 	  "
 
 PACKAGECONFIG ??= "${BWL_TYPE} ${MSGLIB}"
